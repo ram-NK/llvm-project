@@ -18010,7 +18010,7 @@ bool AArch64TargetLowering::lowerInterleavedStore(Instruction *Store,
   if (!SI)
     return false;
 
-  if (isProfitableToInterleaveWithGatherScatter() &&
+  if (hasInterleaveWithGatherScatter() &&
       Factor > getMaxSupportedInterleaveFactor())
     return lowerInterleavedStoreWithShuffle(SI, SVI, Factor);
 
@@ -18217,9 +18217,11 @@ bool AArch64TargetLowering::lowerInterleavedStoreWithShuffle(
   // Getting all the interleaved operands.
   while (ConcatLevel > 1) {
     unsigned InterleavedOperands = Shuffles.size();
-    for (unsigned i = 0; i < InterleavedOperands; i++) {
+    for (unsigned Ops = 0; Ops < InterleavedOperands; Ops++) {
       ShuffleVectorInst *SFL = dyn_cast<ShuffleVectorInst>(Shuffles.front());
       if (!SFL)
+        return false;
+      if (SVI != SFL && !SFL->isConcat())
         return false;
       Shuffles.pop_front();
 
@@ -18235,23 +18237,25 @@ bool AArch64TargetLowering::lowerInterleavedStoreWithShuffle(
   IRBuilder<> Builder(SI);
   auto Mask = createInterleaveMask(LaneLen, 2);
   SmallVector<int, 16> UpperHalfMask(LaneLen), LowerHalfMask(LaneLen);
-  for (unsigned i = 0; i < LaneLen; i++) {
-    LowerHalfMask[i] = Mask[i];
-    UpperHalfMask[i] = Mask[i + LaneLen];
+  for (unsigned Idx = 0; Idx < LaneLen; Idx++) {
+    LowerHalfMask[Idx] = Mask[Idx];
+    UpperHalfMask[Idx] = Mask[Idx + LaneLen];
   }
 
   unsigned InterleaveFactor = Factor >> 1;
   while (InterleaveFactor >= MaxSupportedFactor) {
     std::deque<Value *> ShufflesIntermediate;
     ShufflesIntermediate.resize(Factor);
-    for (unsigned j = 0; j < Factor; j += (InterleaveFactor * 2)) {
-      for (unsigned i = 0; i < InterleaveFactor; i++) {
+    for (unsigned Idx = 0; Idx < Factor; Idx += (InterleaveFactor * 2)) {
+      for (unsigned GroupIdx = 0; GroupIdx < InterleaveFactor; GroupIdx++) {
         auto *Shuffle = Builder.CreateShuffleVector(
-            Shuffles[i + j], Shuffles[i + j + InterleaveFactor], LowerHalfMask);
-        ShufflesIntermediate[i + j] = Shuffle;
+            Shuffles[Idx + GroupIdx],
+            Shuffles[Idx + GroupIdx + InterleaveFactor], LowerHalfMask);
+        ShufflesIntermediate[Idx + GroupIdx] = Shuffle;
         Shuffle = Builder.CreateShuffleVector(
-            Shuffles[i + j], Shuffles[i + j + InterleaveFactor], UpperHalfMask);
-        ShufflesIntermediate[i + j + InterleaveFactor] = Shuffle;
+            Shuffles[Idx + GroupIdx],
+            Shuffles[Idx + GroupIdx + InterleaveFactor], UpperHalfMask);
+        ShufflesIntermediate[Idx + GroupIdx + InterleaveFactor] = Shuffle;
       }
     }
     Shuffles = ShufflesIntermediate;
@@ -18264,12 +18268,12 @@ bool AArch64TargetLowering::lowerInterleavedStoreWithShuffle(
   Value *BaseAddr = SI->getPointerOperand();
   Function *StNFunc = getStructuredStoreFunction(
       SI->getModule(), MaxSupportedFactor, UseScalable, STVTy, PtrTy);
-  for (unsigned i = 0; i < (Factor / MaxSupportedFactor); i++) {
+  for (unsigned N = 0; N < (Factor / MaxSupportedFactor); N++) {
     SmallVector<Value *, 5> Ops;
-    for (unsigned j = 0; j < MaxSupportedFactor; j++)
-      Ops.push_back(Shuffles[i * MaxSupportedFactor + j]);
+    for (unsigned OpIdx = 0; OpIdx < MaxSupportedFactor; OpIdx++)
+      Ops.push_back(Shuffles[N * MaxSupportedFactor + OpIdx]);
 
-    if (i > 0) {
+    if (N > 0) {
       // We will compute the pointer operand of each store from the original
       // base address using GEPs. Cast the base address to a pointer to the
       // scalar  element type.

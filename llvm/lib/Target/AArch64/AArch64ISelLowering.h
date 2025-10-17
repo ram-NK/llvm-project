@@ -229,9 +229,7 @@ public:
 
   bool hasPairedLoad(EVT LoadedType, Align &RequiredAlignment) const override;
 
-  bool isProfitableToInterleaveWithGatherScatter() const override {
-    return true;
-  }
+  bool hasInterleaveWithGatherScatter() const override { return true; }
 
   unsigned getMaxSupportedInterleaveFactor() const override { return 4; }
 

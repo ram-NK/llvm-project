@@ -4931,9 +4931,8 @@ InstructionCost AArch64TTIImpl::getInterleavedMemoryOpCost(
       VectorType::get(VecVTy->getElementType(),
                       VecVTy->getElementCount().divideCoefficientBy(Factor));
 
-  if (TLI->isProfitableToInterleaveWithGatherScatter() &&
-      Opcode == Instruction::Store && (0 == Factor % MaxSupportedFactor) &&
-      Factor > MaxSupportedFactor) {
+  if (TLI->hasInterleaveWithGatherScatter() && Opcode == Instruction::Store &&
+      (0 == Factor % MaxSupportedFactor) && Factor > MaxSupportedFactor) {
     isInterleaveWithShuffle = true;
     SmallVector<int, 16> Mask;
     // preparing interleave Mask.

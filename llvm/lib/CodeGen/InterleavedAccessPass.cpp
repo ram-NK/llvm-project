@@ -537,7 +537,7 @@ bool InterleavedAccessImpl::lowerInterleavedStore(
   // Check if the shufflevector is RE-interleave shuffle.
   unsigned Factor;
   if (!isReInterleaveMask(SVI, Factor, MaxFactor,
-                          TLI->isProfitableToInterleaveWithGatherScatter()))
+                          TLI->hasInterleaveWithGatherScatter()))
     return false;
   assert(NumStoredElements % Factor == 0 &&
          "number of stored element should be a multiple of Factor");
