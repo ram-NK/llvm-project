@@ -55,6 +55,7 @@ LLVM_ABI void initializeAlwaysInlinerLegacyPassPass(PassRegistry &);
 LLVM_ABI void initializeAssignmentTrackingAnalysisPass(PassRegistry &);
 LLVM_ABI void initializeAssumptionCacheTrackerPass(PassRegistry &);
 LLVM_ABI void initializeAtomicExpandLegacyPass(PassRegistry &);
+LLVM_ABI void initializeBasicBlockMatchingAndInferencePass(PassRegistry &);
 LLVM_ABI void initializeBasicBlockPathCloningPass(PassRegistry &);
 LLVM_ABI void
 initializeBasicBlockSectionsProfileReaderWrapperPassPass(PassRegistry &);
@@ -290,6 +291,7 @@ LLVM_ABI void initializeRemoveRedundantDebugValuesLegacyPass(PassRegistry &);
 LLVM_ABI void initializeRenameIndependentSubregsLegacyPass(PassRegistry &);
 LLVM_ABI void initializeReplaceWithVeclibLegacyPass(PassRegistry &);
 LLVM_ABI void initializeResetMachineFunctionPass(PassRegistry &);
+LLVM_ABI void initializeRuntimeLibraryInfoWrapperPass(PassRegistry &);
 LLVM_ABI void initializeSCEVAAWrapperPassPass(PassRegistry &);
 LLVM_ABI void initializeSROALegacyPassPass(PassRegistry &);
 LLVM_ABI void initializeSafeStackLegacyPassPass(PassRegistry &);
